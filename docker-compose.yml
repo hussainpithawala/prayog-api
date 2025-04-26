@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - CASSANDRA_HOST=cassandra
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=prayog-api-service
+    depends_on:
+      - cassandra
+      - otel-collector
+    networks:
+      - observability-net
+      - app-net
+
+  cassandra:
+    image: cassandra:4.1
+    ports:
+      - "9042:9042"
+      - "7072:7072"  # JMX port for metrics
+    environment:
+      - CASSANDRA_CLUSTER_NAME=fastapi-cluster
+      - JVM_OPTS=-Dcassandra.metricsReporterConfigFile=/etc/cassandra/metrics-reporting.yaml
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+      - ./configs/cassandra/metrics-reporting.yaml:/etc/cassandra/metrics-reporting.yaml
+    networks:
+      - app-net
+      - observability-net
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.88.0
+    command: ["--config=/etc/otel-collector/config.yaml"]
+    volumes:
+      - ./configs/otel-collector/config.yaml:/etc/otel-collector/config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8888:8888"   # Prometheus metrics exposed by collector
+      - "8889:8889"   # Collector's own metrics
+      - "13133:13133" # Health check
+      - "55679:55679" # zPages
+    environment:
+      - NEW_RELIC_LICENSE_KEY=${NEW_RELIC_LICENSE_KEY}
+    depends_on:
+      - jaeger
+    networks:
+      - observability-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    depends_on:
+      - otel-collector
+    networks:
+      - observability-net
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning
+      - ./configs/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    depends_on:
+      - prometheus
+    networks:
+      - observability-net
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.47
+    ports:
+      - "16686:16686"  # UI
+      - "14250:14250"  # Model.proto
+      - "14268:14268"  # HTTP endpoint
+      - "6831:6831/udp" # Jaeger compact thrift
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - observability-net
+
+volumes:
+  cassandra_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  observability-net:
+    driver: bridge
+  app-net:
+    driver: bridge
