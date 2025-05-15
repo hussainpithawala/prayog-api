@@ -23,6 +23,7 @@ opentelemetry-instrumentation-cassandra = "^0.53b1"
 opentelemetry-instrumentation-logging = "^0.53b1"
 prometheus-client = "^0.21.1"
 pydantic-settings = "^2.9.1"
+pipdeptree = "^2.26.1"
 
 
 [tool.poetry.group.dev.dependencies]

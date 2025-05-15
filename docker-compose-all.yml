@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - CASSANDRA_HOST=cassandra
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=prayog-api-service
+    depends_on:
+      - cassandra
+      - otel-collector
+    networks:
+      - observability-net
+      - app-net
+
   cassandra:
     image: cassandra:4.1
     ports:
