@@ -90,6 +90,7 @@ class ExperimentTermination(ExperimentTerminationBase):
     updated_at: datetime
 
 class BucketedSampleBase(BaseModel):
+    experiment_id: uuid.UUID
     sampled_value: str
     sampled_entity: str
     allocated_bucket: str
@@ -98,7 +99,7 @@ class BucketedSampleCreate(BucketedSampleBase):
     pass
 
 class BucketedSample(BucketedSampleBase):
-    experiment_id: uuid.UUID
+    id: uuid.UUID
     complete: bool = False
     completed_at: Optional[datetime] = None
     created_at: datetime

@@ -1,21 +1,24 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from app.db.cassandra import init_cassandra, close_cassandra
+from app.db.cassandra import CassandraSessionManager
 from app.telemetry.tracing import setup_tracing
 from app.telemetry.metrics import setup_metrics
 from app.telemetry.logging import setup_logging
 from app.routers import router as api_router
 
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup logic
-    init_cassandra()
+    # Initialize Cassandra connection
+    CassandraSessionManager.get_session()
     setup_metrics()
     setup_logging()
     yield
     # Shutdown logic
-    close_cassandra()
+    # Clean up Cassandra connection
+    CassandraSessionManager.shutdown()
 
 
 app = FastAPI(
