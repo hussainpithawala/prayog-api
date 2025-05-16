@@ -33,6 +33,16 @@ def client(cassandra_session):
 
 
 @pytest.fixture
+def sample_experiment(client):
+    service = client.post("/api/v1/services", json={"name": "test-service", "active": True}).json()
+    experiment = client.post(
+        f"/api/v1/services/{service['id']}/experiments",
+        json={"name": "test-exp", "active": True, "service_id": service["id"]}
+    ).json()
+    return experiment
+
+
+@pytest.fixture
 def clean_tables(cassandra_session):
     """Clean tables between tests"""
     yield

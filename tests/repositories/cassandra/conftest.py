@@ -134,7 +134,6 @@ def sample_condition():
 @pytest.fixture
 def sample_criterion():
     return ExperimentSamplingCriterionCreate(
-        id=uuid4(),
         experiment_id=uuid4(),
         sampling_model="User",
         sampling_attribute="attributes"

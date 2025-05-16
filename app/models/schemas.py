@@ -52,7 +52,7 @@ class ExperimentSamplingConditionBase(BaseModel):
     condition: str
 
 class ExperimentSamplingConditionCreate(ExperimentSamplingConditionBase):
-    criterion_id: uuid.UUID
+    criterion_id: uuid.UUID = None
     experiment_id: uuid.UUID
 
 class ExperimentSamplingCondition(ExperimentSamplingConditionBase):
@@ -63,7 +63,6 @@ class ExperimentSamplingCondition(ExperimentSamplingConditionBase):
     updated_at: datetime
 
 class ExperimentSamplingCriterionBase(BaseModel):
-    id: uuid.UUID
     sampling_model: str
     sampling_attribute: str
 
