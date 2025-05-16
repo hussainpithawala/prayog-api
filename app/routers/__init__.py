@@ -9,3 +9,4 @@ from .sample_routes import router as sample_router
 router = APIRouter()
 router.include_router(service_router)
 router.include_router(experiment_router)
+router.include_router(criterion_router)

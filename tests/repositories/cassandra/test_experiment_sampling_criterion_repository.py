@@ -16,7 +16,6 @@ def test_create_criterion(criterion_repo, sample_criterion):
 def test_create_with_conditions(criterion_repo, sample_criterion):
     conditions = [
         ExperimentSamplingConditionCreate(
-            criterion_id=uuid4(),  # Will be overwritten
             experiment_id=sample_criterion.experiment_id,
             model="User",
             property="country",
@@ -24,7 +23,6 @@ def test_create_with_conditions(criterion_repo, sample_criterion):
             condition="equals"
         ),
         ExperimentSamplingConditionCreate(
-            criterion_id=uuid4(),  # Will be overwritten
             experiment_id=sample_criterion.experiment_id,
             model="User",
             property="age",
@@ -43,7 +41,6 @@ def test_find_by_id_with_conditions(criterion_repo, sample_criterion):
     conditions = [
         ExperimentSamplingConditionCreate(
             experiment_id=sample_criterion.experiment_id,
-            criterion_id=sample_criterion.id,
             model="User",
             property="country",
             value="US",
@@ -64,7 +61,6 @@ def test_delete_criterion_with_conditions(criterion_repo, sample_criterion):
     conditions = [
         ExperimentSamplingConditionCreate(
             experiment_id=sample_criterion.experiment_id,
-            criterion_id=sample_criterion.id,
             model="User",
             property="country",
             value="US",
