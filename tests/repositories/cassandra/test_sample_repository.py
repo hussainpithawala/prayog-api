@@ -83,13 +83,13 @@ def test_find_nonexistent_entity_value(sample_repo, sample_data):
 def test_list_by_experiment(sample_repo, sample_data):
     # Create multiple samples for same experiment
     sample1 = sample_repo.create(BucketedSampleCreate(**sample_data))
-    sample_data["sampled_entity"] = "user123"
+    sample_data["sampled_entity"] = "user456"
     sample2 = sample_repo.create(BucketedSampleCreate(**sample_data))
 
     samples = sample_repo.list_by_experiment(sample_data["experiment_id"])
 
     assert len(samples) == 2
-    assert {s.sampled_entity for s in samples} == {"user123"}
+    assert {s.sampled_entity for s in samples} == {"user123", "user456"}
 
 
 def test_list_with_limit(sample_repo, sample_data):
