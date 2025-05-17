@@ -3,13 +3,8 @@ import pytest
 from fastapi import status
 
 @pytest.fixture
-def sample_service(client):
-    response = client.post("/api/v1/services", json={"name": "test-service", "active": True})
-    return response.json()
-
-
-@pytest.fixture
-def sample_experiment_data(sample_service, client):
+def sample_experiment_data(client, create_temp_service):
+    sample_service = create_temp_service
     return {
         "name": "test-experiment",
         "active": True,
@@ -17,7 +12,7 @@ def sample_experiment_data(sample_service, client):
     }
 
 
-def test_create_experiment(sample_experiment_data, client):
+def test_create_experiment(sample_experiment_data, client, delete_temp_service):
     response = client.post(
         f"/api/v1/services/{sample_experiment_data['service_id']}/experiments",
         json=sample_experiment_data
@@ -28,7 +23,7 @@ def test_create_experiment(sample_experiment_data, client):
     assert data["service_id"] == sample_experiment_data["service_id"]
 
 
-def test_list_experiments(sample_experiment_data, client):
+def test_list_experiments(sample_experiment_data, client, delete_temp_service):
     # First create an experiment
     client.post(
         f"/api/v1/services/{sample_experiment_data['service_id']}/experiments",

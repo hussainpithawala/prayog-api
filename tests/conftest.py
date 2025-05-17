@@ -1,6 +1,8 @@
 # tests/conftest.py
 import pytest
 from fastapi.testclient import TestClient
+from starlette import status
+
 from app.main import app
 from cassandra.cluster import Cluster
 from cassandra.cqlengine import connection
@@ -12,6 +14,7 @@ def cassandra_session():
     cluster = connection.setup(['127.0.0.1'], default_keyspace='test_experimentation')
     yield cluster
     connection.unregister_connection('default')
+
 
 @pytest.fixture(scope="session")
 def client(cassandra_session):
@@ -33,13 +36,44 @@ def client(cassandra_session):
 
 
 @pytest.fixture
-def sample_experiment(client):
-    service = client.post("/api/v1/services", json={"name": "test-service", "active": True}).json()
+def sample_experiment(client, create_temp_service):
+    service = create_temp_service
     experiment = client.post(
         f"/api/v1/services/{service['id']}/experiments",
         json={"name": "test-exp", "active": True, "service_id": service["id"]}
     ).json()
     return experiment
+
+
+@pytest.fixture
+def create_temp_service(client):
+    create_response = client.post("/api/v1/services", json={"name": "temp-service", "active": True})
+    yield create_response.json()
+
+
+@pytest.fixture
+def delete_temp_service(client, create_temp_service):
+    yield
+    service_id = create_temp_service['id']
+    response = client.delete(f"/api/v1/services/{service_id}")
+    assert response.status_code == status.HTTP_202_ACCEPTED
+    assert response.json() == {"message": f"service {service_id} deleted successfully"}
+
+
+@pytest.fixture
+def sample_create_bulk_services(client):
+    yield [client.post("/api/v1/services", json={"name": f"test-service-{index}", "active": True}).json() for index in
+           range(1, 10)]
+
+
+@pytest.fixture
+def sample_delete_bulk_services(client, sample_create_bulk_services):
+    yield
+    for service in sample_create_bulk_services:
+        service_id = service['id']
+        response = client.delete(f"/api/v1/services/{service_id}")
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert response.json() == {"message": f"service {service_id} deleted successfully"}
 
 
 @pytest.fixture

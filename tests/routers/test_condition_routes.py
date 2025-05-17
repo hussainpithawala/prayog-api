@@ -3,8 +3,8 @@ import pytest
 from fastapi import status
 
 @pytest.fixture
-def sample_criterion(client):
-    service = client.post("/api/v1/services", json={"name": "test-service", "active": True}).json()
+def sample_criterion(client, create_temp_service):
+    service = create_temp_service
     experiment = client.post(
         f"/api/v1/services/{service['id']}/experiments",
         json={"name": "test-exp", "active": True, "service_id": service["id"]}
@@ -23,7 +23,7 @@ def sample_criterion(client):
     return criterion
 
 
-def test_create_condition(sample_criterion, client):
+def test_create_condition(sample_criterion, client, delete_temp_service):
     condition_data = {
         "experiment_id": sample_criterion['experiment_id'],
         "criterion_id": sample_criterion['id'],
@@ -40,7 +40,7 @@ def test_create_condition(sample_criterion, client):
     assert response.json()["property"] == "age"
 
 
-def test_list_conditions(sample_criterion, client):
+def test_list_conditions(sample_criterion, client, delete_temp_service):
     # First create a condition
     client.post(
         f"/api/v1/criteria/{sample_criterion['id']}/conditions",

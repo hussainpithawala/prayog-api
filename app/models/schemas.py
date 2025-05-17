@@ -16,6 +16,10 @@ class Service(ServiceBase):
     created_at: datetime
     updated_at: datetime
 
+class ServiceList(BaseModel):
+    services: List[Service]
+    next_page_token: Optional[str] = None
+
 class ExperimentBase(BaseModel):
     name: str
     service_id: uuid.UUID

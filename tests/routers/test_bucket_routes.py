@@ -2,7 +2,7 @@
 from fastapi import status
 
 
-def test_create_bucket(sample_experiment, client):
+def test_create_bucket(sample_experiment, client, delete_temp_service):
     bucket_data = {
         "experiment_id": sample_experiment['id'],
         "bucket_name": "test-bucket",
@@ -16,7 +16,7 @@ def test_create_bucket(sample_experiment, client):
     assert response.json()["bucket_name"] == "test-bucket"
 
 
-def test_list_buckets(sample_experiment, client):
+def test_list_buckets(sample_experiment, client, delete_temp_service):
     # First create a bucket
     client.post(
         f"/api/v1/experiments/{sample_experiment['id']}/buckets",
