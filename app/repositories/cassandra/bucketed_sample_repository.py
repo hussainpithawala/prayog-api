@@ -93,13 +93,4 @@ class BucketedSampleRepository(BaseRepository):
         pass
 
     def delete_by_experiment(self, experiment_id: UUID) -> bool:
-        delete_stmt = self.session.prepare(
-            "DELETE FROM bucketed_samples WHERE experiment_id = ?"
-        )
-        delete_stmt.bind(experiment_id)
-        try:
-            self.session.execute(delete_stmt)
-            return True
-        except Exception as e:
-            # Log the error
-            return False
+        pass

@@ -1,4 +1,5 @@
 # tests/repositories/cassandra/test_sample_repository.py
+
 import pytest
 from uuid import uuid4
 from datetime import datetime
@@ -100,21 +101,22 @@ def test_list_with_limit(sample_repo, sample_data):
     samples = sample_repo.list_by_experiment(sample_data["experiment_id"], limit=2)
     assert len(samples) == 2
 
-# def test_delete_samples_by_experiment(sample_repo, created_sample):
-#     # Create another sample for same experiment
-#     sample_data = {
-#         "experiment_id": created_sample.experiment_id,
-#         "sampled_entity": "user456",
-#         "sampled_value": "UK",
-#         "allocated_bucket": "test-bucket"
-#     }
-#     sample_repo.create(BucketedSampleCreate(**sample_data))
-#
-#     # Delete all samples for experiment
-#     assert sample_repo.delete_by_experiment(created_sample.experiment_id) is True
-#
-#     # Verify no samples remain
-#     assert len(sample_repo.list_by_experiment(created_sample.experiment_id)) == 0
+@pytest.mark.skip
+def test_delete_samples_by_experiment(sample_repo, created_sample):
+    # Create another sample for same experiment
+    sample_data = {
+        "experiment_id": created_sample.experiment_id,
+        "sampled_entity": "user456",
+        "sampled_value": "UK",
+        "allocated_bucket": "test-bucket"
+    }
+    sample_repo.create(BucketedSampleCreate(**sample_data))
+
+    # Delete all samples for experiment
+    assert sample_repo.delete_by_experiment(created_sample.experiment_id) is True
+
+    # Verify no samples remain
+    assert len(sample_repo.list_by_experiment(created_sample.experiment_id)) == 0
 
 
 def test_sample_ordering(sample_repo, sample_data):
