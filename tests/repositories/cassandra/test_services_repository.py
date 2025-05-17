@@ -1,7 +1,7 @@
 # tests/test_services_repository.py
 import pytest
 from uuid import UUID
-from app.models.schemas import Service
+from app.models.schemas import Service, ServiceCreate
 
 
 def test_create_service(service_repo, sample_service):
@@ -58,3 +58,40 @@ def test_list_services(service_repo, sample_service):
 
     assert len(services) == initial_count + 1
     assert services[-1].name == sample_service.name
+
+
+@pytest.fixture(scope="function")
+def bulk_populate_services(service_repo):
+    return [service_repo.create(ServiceCreate(
+        name=f"test-service-{index}",
+        active=True
+    )) for index in range(1, 10)]
+
+
+def test_list_paginated(service_repo, bulk_populate_services):
+    active_only = True
+    limit = 2
+    paging_state = None
+
+    # Loop through pages
+    all_results = []
+    for _ in range(3):  # Iterate over multiple pages
+        # Call the method under test
+        result, next_paging_state = service_repo.list_services_paginated(
+            active_only=active_only,
+            limit=limit,
+            paging_state=paging_state,
+        )
+
+        # Accumulate results and move to the next page
+        all_results.extend(result)
+        paging_state = next_paging_state
+
+        if not paging_state:  # Break the loop if there are no more pages
+            break
+
+        # Validate that the current page has the correct number of results
+        assert len(result) <= limit
+
+    # Ensure all results are filtered by `active_only`
+    assert all(service.active for service in all_results)

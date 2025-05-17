@@ -2,10 +2,14 @@
 import datetime
 import uuid
 from typing import List, Optional
+
+from cassandra.cluster import Session
 from cassandra.cqlengine import columns
 from cassandra.cqlengine.models import Model
+
+from app.db.cassandra import CassandraSessionManager
 from app.models.schemas import Service, ServiceCreate
-from app.repositories.cassandra.base_repository import BaseRepository
+from app.repositories.cassandra.base_repository import BaseRepository, T
 from uuid import UUID
 from cassandra.cqlengine.query import DoesNotExist
 from cassandra.cqlengine.management import sync_table
@@ -23,6 +27,24 @@ class ServiceModel(Model):
 
 
 class ServiceRepository(BaseRepository):
+
+    def list_services_paginated(self, active_only: bool or False, limit: int, paging_state: bytes = None):
+        rows, paging_state = self.list_paginated(
+            session=self.session,
+            table_name="services",
+            has_active_only=True,
+            active_only=active_only,
+            limit=limit,
+            paging_state=paging_state)
+
+        # Convert rows to Service objects
+        services = [Service(**row) for row in rows]
+        return services, paging_state
+
+    def __init__(self):
+        self.session: Session = CassandraSessionManager.get_session()
+        super().__init__()
+
     def _sync_table(self):
         sync_table(ServiceModel)
 
@@ -51,7 +73,6 @@ class ServiceRepository(BaseRepository):
         else:
             return [Service(**s) for s in services]
 
-
     def update(self, service: Service) -> Service:
         service_model = ServiceModel.objects(id=service.id).first()
         if not service_model:
@@ -64,16 +85,16 @@ class ServiceRepository(BaseRepository):
         )
         return Service(**service_model)
 
-    def delete(self, id: UUID) -> bool:
+    def delete(self, service_id: UUID) -> bool:
         """Delete a service by ID. Returns True if deleted, False if not found."""
         try:
             # First verify the service exists
-            service = ServiceModel.objects(id=id).first()
+            service = ServiceModel.objects(id=service_id).first()
             if not service:
                 return False
 
             # Delete the service
-            ServiceModel.objects(id=id).delete()
+            ServiceModel.objects(id=service_id).delete()
             return True
         except DoesNotExist:
             return False
