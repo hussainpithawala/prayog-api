@@ -48,22 +48,31 @@ def sample_experiment(client, create_temp_service):
 @pytest.fixture
 def create_temp_service(client):
     create_response = client.post("/api/v1/services", json={"name": "temp-service", "active": True})
-    yield create_response.json()
-
-
-@pytest.fixture
-def delete_temp_service(client, create_temp_service):
-    yield
-    service_id = create_temp_service['id']
+    temp_service = create_response.json()
+    yield temp_service
+    service_id = temp_service['id']
     response = client.delete(f"/api/v1/services/{service_id}")
     assert response.status_code == status.HTTP_202_ACCEPTED
     assert response.json() == {"message": f"service {service_id} deleted successfully"}
-
 
 @pytest.fixture
 def sample_create_bulk_services(client):
     yield [client.post("/api/v1/services", json={"name": f"test-service-{index}", "active": True}).json() for index in
            range(1, 10)]
+
+@pytest.fixture
+def sample_create_bulk_experiments(client, create_temp_service):
+    test_service = create_temp_service
+    test_experiments = [client.post(
+        f"/api/v1/services/{test_service['id']}/experiments",
+        json={"name": f"test-exp-{index}", "active": True, "service_id": test_service["id"]}
+    ).json() for index in range(1, 10)]
+    yield test_service, test_experiments
+
+    for test_experiment in test_experiments:
+        response = client.delete(f"/api/v1/services/{test_service['id']}/experiments/{test_experiment['id']}")
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert response.json() == {"message": f"experiment {test_experiment['id']} deleted successfully"}
 
 
 @pytest.fixture

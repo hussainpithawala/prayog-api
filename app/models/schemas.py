@@ -36,6 +36,11 @@ class Experiment(ExperimentBase):
     created_at: datetime
     updated_at: datetime
 
+class ExperimentList(BaseModel):
+    experiments: List[Experiment]
+    next_page_token: Optional[str] = None
+
+
 class ExperimentBucketBase(BaseModel):
     experiment_id: uuid.UUID
     bucket_name: str

@@ -76,7 +76,7 @@ def test_list_services(client, sample_create_bulk_services, sample_delete_bulk_s
     assert len(all_services) == len(expected_services)
 
 
-def test_get_service(client, create_temp_service, delete_temp_service):
+def test_get_service(client, create_temp_service):
     # First create a service to get
     service_id = create_temp_service['id']
     response = client.get(f"/api/v1/services/{service_id}")

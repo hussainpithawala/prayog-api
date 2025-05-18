@@ -23,7 +23,7 @@ def sample_criterion(client, create_temp_service):
     return criterion
 
 
-def test_create_condition(sample_criterion, client, delete_temp_service):
+def test_create_condition(sample_criterion, client):
     condition_data = {
         "experiment_id": sample_criterion['experiment_id'],
         "criterion_id": sample_criterion['id'],
@@ -40,7 +40,7 @@ def test_create_condition(sample_criterion, client, delete_temp_service):
     assert response.json()["property"] == "age"
 
 
-def test_list_conditions(sample_criterion, client, delete_temp_service):
+def test_list_conditions(sample_criterion, client):
     # First create a condition
     client.post(
         f"/api/v1/criteria/{sample_criterion['id']}/conditions",

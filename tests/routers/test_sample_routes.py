@@ -2,7 +2,8 @@
 import pytest
 from fastapi import status
 
-def test_create_sample(sample_experiment, client, delete_temp_service):
+
+def test_create_sample(sample_experiment, client):
     sample_data = {
         "experiment_id": sample_experiment['id'],
         "sampled_entity": "user123",
@@ -17,7 +18,7 @@ def test_create_sample(sample_experiment, client, delete_temp_service):
     assert response.json()["sampled_entity"] == "user123"
 
 
-def test_list_samples(sample_experiment, client, delete_temp_service):
+def test_list_samples(sample_experiment, client):
     # First create a sample
     client.post(
         f"/api/v1/experiments/{sample_experiment['id']}/samples",

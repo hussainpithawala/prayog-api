@@ -2,7 +2,7 @@
 from fastapi import status
 
 
-def test_create_criterion_with_conditions(sample_experiment, client, delete_temp_service):
+def test_create_criterion_with_conditions(sample_experiment, client):
     criterion_data = {
         "experiment_id": sample_experiment['id'],
         "sampling_model": "User",
