@@ -1,8 +1,6 @@
-# tests/test_experiments_repository.py
+# tests/test_experiment_repository.py
 import pytest
-from uuid import UUID
-from datetime import datetime
-from app.models.schemas import Experiment
+from app.models.schemas import Experiment, ServiceCreate, ExperimentCreate
 
 
 def test_create_experiment(experiment_repo, sample_experiment):
@@ -28,6 +26,61 @@ def test_list_experiments_by_service(experiment_repo, sample_experiment):
 
     assert len(experiments) == initial_count + 1
     assert experiments[-1].service_id == service_id
+
+
+@pytest.fixture(scope="function")
+def bulk_populate_experiments(service_repo, experiment_repo):
+    service = service_repo.create(ServiceCreate(
+        name=f"test-service-exp-bulk",
+        active=True
+    ))
+    bulk_experiments = [experiment_repo.create(ExperimentCreate(
+        service_id=service.id,
+        name=f"test-experiment-{index}",
+        active=True
+    )) for index in range(1, 10)]
+
+    yield service, bulk_experiments
+    for experiment in bulk_experiments:
+        experiment_repo.delete(experiment.id)
+    service_repo.delete(service.id)
+
+
+def test_list_paginated_experiments(experiment_repo, bulk_populate_experiments):
+    """
+    Test paginated listing of experiments from the repository.
+
+    - Verifies pagination works correctly with the repository method.
+    - Confirms the `next_page_token` is managed properly.
+    """
+    service, bulk_experiments = bulk_populate_experiments
+    limit = 4  # Number of experiments per page
+
+    # Initialize variables for pagination
+    all_experiments = []
+    next_page_token = None
+
+    while True:
+        # Fetch paginated experiments
+        current_page, next_page_token = experiment_repo.list_experiments_paginated_by_service(service_id=service.id,
+                                                                                              active_only=True,
+                                                                                              limit=limit,
+                                                                                              paging_state=next_page_token
+                                                                                              )
+
+        # Validate the returned experiments
+        assert len(current_page) <= limit
+        all_experiments.extend(current_page)
+
+        # Exit loop if there's no next page
+        if not next_page_token:
+            break
+
+    # Verify all experiments were returned across pages
+    assert len(all_experiments) == len(bulk_experiments)
+    assert {exp.name for exp in bulk_experiments} == {
+        exp.name for exp in all_experiments
+    }
 
 
 def test_update_experiment_status(experiment_repo, sample_experiment):

@@ -41,10 +41,6 @@ class ServiceRepository(BaseRepository):
         services = [Service(**row) for row in rows]
         return services, paging_state
 
-    def __init__(self):
-        self.session: Session = CassandraSessionManager.get_session()
-        super().__init__()
-
     def _sync_table(self):
         sync_table(ServiceModel)
 

@@ -6,6 +6,8 @@ from cassandra import ConsistencyLevel
 from cassandra.cluster import Session
 from cassandra.query import SimpleStatement
 from cassandra.cluster import Session
+
+from app.db.cassandra import CassandraSessionManager
 from app.models.schemas import Service
 
 T = TypeVar('T')
@@ -14,6 +16,7 @@ K = TypeVar('K')
 
 class BaseRepository(ABC):
     def __init__(self):
+        self.session: Session = CassandraSessionManager.get_session()
         self._sync_table()
 
     @abstractmethod

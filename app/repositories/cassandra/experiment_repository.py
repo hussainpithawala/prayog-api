@@ -1,8 +1,14 @@
 # app/repositories/experiment_repository.py
 from uuid import uuid4, UUID
 from typing import List, Optional
+
+from cassandra import ConsistencyLevel
 from cassandra.cqlengine import columns
+from cassandra.cqlengine.connection import session
 from cassandra.cqlengine.models import Model
+from cassandra.cqlengine.query import DoesNotExist
+from cassandra.query import SimpleStatement
+
 from app.models.schemas import Experiment, ExperimentCreate
 from app.repositories.cassandra.base_repository import BaseRepository
 from cassandra.cqlengine.management import sync_table
@@ -13,7 +19,7 @@ class ExperimentModel(Model):
     __keyspace__ = "experimentation"
     __table_name__ = "experiments"
 
-    id = columns.UUID(primary_key=True) # Primary key
+    id = columns.UUID(primary_key=True)  # Primary key
     service_id = columns.UUID(primary_key=True)  # Partition key
     name = columns.Text(primary_key=True)  # Clustering column
     active = columns.Boolean(default=True)
@@ -55,6 +61,24 @@ class ExperimentRepository(BaseRepository):
         else:
             return [Experiment(**e) for e in experiments]
 
+    def list_experiments_paginated_by_service(self, service_id: UUID, active_only: bool or False, limit: int,
+                                              paging_state: bytes = None):
+        query = f"SELECT * FROM {ExperimentModel.__table_name__}"
+
+        if active_only:
+            query += f" WHERE active = {active_only} and service_id = {service_id} ALLOW FILTERING"
+
+        statement = SimpleStatement(query, fetch_size=limit, consistency_level=ConsistencyLevel.QUORUM
+                                    )
+
+        # Execute query with paging state
+        result_set = self.session.execute(statement, paging_state=paging_state)
+        rows = result_set.current_rows
+
+        # Convert rows to Service objects
+        experiments = [Experiment(**row) for row in rows]
+        return experiments, result_set.paging_state
+
     def update_status(self, experiment_id: UUID, active: bool) -> Experiment:
         experiment = ExperimentModel.objects(id=experiment_id).first()
         if not experiment:
@@ -81,5 +105,11 @@ class ExperimentRepository(BaseRepository):
         return Experiment(**experiment)
 
     def delete(self, experiment_id: UUID) -> bool:
-        deleted = ExperimentModel.objects(id=experiment_id).delete()
-        return deleted > 0
+        try:
+            ExperimentModel.objects(id=experiment_id).delete()
+            result = True
+        except DoesNotExist:
+            result = False
+        except Exception:
+            raise
+        return result
