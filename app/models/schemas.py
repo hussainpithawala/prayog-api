@@ -85,6 +85,10 @@ class ExperimentSamplingCriterion(ExperimentSamplingCriterionBase):
     created_at: datetime
     updated_at: datetime
 
+class ExperimentSamplingCriterionList(BaseModel):
+    criterions: List[ExperimentSamplingCriterion]
+    next_page_token: Optional[str] = None
+
 class ExperimentTerminationBase(BaseModel):
     termination_type: str
     termination_value: str

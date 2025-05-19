@@ -99,7 +99,7 @@ class ExperimentSamplingCriterionRepository(BaseRepository):
         criteria = ExperimentSamplingCriterionModel.objects(experiment_id=experiment_id).allow_filtering()
         return [self.find_by_id(c.id) for c in criteria]
 
-    def list_criterions_paginated_by_experiment(self, experiment_id: UUID, active_only: bool = False, limit: int = 100,
+    def list_criterions_paginated_by_experiment(self, experiment_id: UUID, limit: int = 100,
                                                 paging_state: bytes = None):
         query = f"SELECT * FROM {ExperimentSamplingCriterionModel.__table_name__} WHERE experiment_id = {experiment_id} ALLOW FILTERING"
 
@@ -122,3 +122,4 @@ class ExperimentSamplingCriterionRepository(BaseRepository):
         # Then delete the criterion
         deleted = ExperimentSamplingCriterionModel.objects(id=experiment_sampling_criterion_id).delete()
         return deleted is None
+

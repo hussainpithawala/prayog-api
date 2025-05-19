@@ -36,13 +36,17 @@ def client(cassandra_session):
 
 
 @pytest.fixture
-def sample_experiment(client, create_temp_service):
-    service = create_temp_service
-    experiment = client.post(
-        f"/api/v1/services/{service['id']}/experiments",
-        json={"name": "test-exp", "active": True, "service_id": service["id"]}
+def create_temp_experiment(client, create_temp_service):
+    test_service = create_temp_service
+
+    test_experiment = client.post(
+        f"/api/v1/services/{test_service['id']}/experiments",
+        json={"name": "test-exp-buzz", "active": True, "service_id": test_service["id"]}
     ).json()
-    return experiment
+    yield test_experiment
+    response = client.delete(f"/api/v1/services/{test_service['id']}/experiments/{test_experiment['id']}")
+    assert response.status_code == status.HTTP_202_ACCEPTED
+    assert response.json() == {"message": f"experiment {test_experiment['id']} deleted successfully"}
 
 
 @pytest.fixture
@@ -84,6 +88,33 @@ def sample_delete_bulk_services(client, sample_create_bulk_services):
         assert response.status_code == status.HTTP_202_ACCEPTED
         assert response.json() == {"message": f"service {service_id} deleted successfully"}
 
+@pytest.fixture
+def sample_create_bulk_criterions(client, create_temp_experiment):
+    test_experiment = create_temp_experiment
+    test_criterions = [client.post(
+        f"/api/v1/experiments/{test_experiment['id']}/criteria",
+        json={
+            "experiment_id": test_experiment['id'],
+            "criterion": {
+                "experiment_id": test_experiment['id'],
+                "sampling_model": f"test-model-{index}",
+                "sampling_attribute": "attributes"
+            },
+            "conditions": [{
+                "experiment_id": test_experiment['id'],
+                "model": f"test-model-{index}",
+                "property": "country",
+                "value": "US",
+                "condition": "equals"
+            }]
+        }
+    ).json() for index in range(1, 10)]
+    yield test_experiment, test_criterions
+
+    for test_criterion in test_criterions:
+        response = client.delete(f"/api/v1/experiments/{test_experiment['id']}/criteria/{test_criterion['id']}")
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert response.json() == {"message": f"criterion {test_criterion['id']} deleted successfully"}
 
 @pytest.fixture
 def clean_tables(cassandra_session):
