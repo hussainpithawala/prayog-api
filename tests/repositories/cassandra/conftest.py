@@ -7,17 +7,17 @@ from cassandra.cqlengine.management import sync_table, drop_table
 from app.repositories.cassandra.service_repository import ServiceRepository
 from app.repositories.cassandra.experiment_repository import ExperimentRepository
 from app.repositories.cassandra.bucket_repository import BucketRepository
-from app.repositories.cassandra.bucketed_sample_repository import BucketedSampleRepository
+from app.repositories.cassandra.sample_repository import BucketedSampleRepository
 
 from app.repositories.cassandra.service_repository import ServiceModel
 from app.repositories.cassandra.experiment_repository import ExperimentModel
 from app.repositories.cassandra.bucket_repository import ExperimentBucketModel
-from app.repositories.cassandra.bucketed_sample_repository import BucketedSampleModel
-from app.repositories.cassandra.experiment_sampling_condition_repository import (
+from app.repositories.cassandra.sample_repository import BucketedSampleModel
+from app.repositories.cassandra.condition_repository import (
     ExperimentSamplingConditionModel,
     ExperimentSamplingConditionRepository
 )
-from app.repositories.cassandra.experiment_sampling_criterion_repository import (
+from app.repositories.cassandra.criterion_repository import (
     ExperimentSamplingCriterionModel,
     ExperimentSamplingCriterionRepository
 )

@@ -1,4 +1,4 @@
-# app/repositories/cassandra/experiment_sampling_criterion_repository.py
+# app/repositories/cassandra/criterion_repository.py
 from uuid import UUID, uuid4
 from datetime import datetime
 
@@ -19,7 +19,7 @@ from app.models.schemas import (
 )
 from app.repositories.cassandra.base_repository import BaseRepository, T
 from app.repositories.cassandra.dependencies import get_condition_repo
-from app.repositories.cassandra.experiment_sampling_condition_repository import ExperimentSamplingConditionRepository
+from app.repositories.cassandra.condition_repository import ExperimentSamplingConditionRepository
 
 
 class ExperimentSamplingCriterionModel(Model):

@@ -1,4 +1,4 @@
-# tests/repositories/cassandra/test_experiment_sampling_criterion_repository.py
+# tests/repositories/cassandra/test_criterion_repository.py
 import pytest
 from uuid import uuid4
 from app.models.schemas import (

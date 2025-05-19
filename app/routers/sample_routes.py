@@ -4,7 +4,7 @@ from uuid import UUID
 from typing import List
 from app.dependencies import get_sample_repository
 from app.models.schemas import BucketedSample, BucketedSampleCreate
-from app.repositories.cassandra.bucketed_sample_repository import BucketedSampleRepository
+from app.repositories.cassandra.sample_repository import BucketedSampleRepository
 
 router = APIRouter(prefix="/api/v1/experiments/{experiment_id}/samples", tags=["samples"])
 

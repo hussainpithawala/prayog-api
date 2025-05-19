@@ -4,7 +4,7 @@ from uuid import UUID
 from typing import List
 from app.dependencies import get_condition_repository
 from app.models.schemas import ExperimentSamplingCondition, ExperimentSamplingConditionCreate
-from app.repositories.cassandra.experiment_sampling_condition_repository import ExperimentSamplingConditionRepository
+from app.repositories.cassandra.condition_repository import ExperimentSamplingConditionRepository
 
 router = APIRouter(prefix="/api/v1/criteria/{criterion_id}/conditions", tags=["sampling conditions"])
 

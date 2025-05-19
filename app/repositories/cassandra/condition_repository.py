@@ -1,4 +1,4 @@
-# app/repositories/cassandra/experiment_sampling_condition_repository.py
+# app/repositories/cassandra/condition_repository.py
 from uuid import UUID, uuid4
 from datetime import datetime
 from cassandra.cqlengine import columns

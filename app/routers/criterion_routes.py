@@ -8,7 +8,7 @@ from app.models.schemas import (
     ExperimentSamplingCriterionCreate,
     ExperimentSamplingCondition, ExperimentSamplingConditionCreate
 )
-from app.repositories.cassandra.experiment_sampling_criterion_repository import ExperimentSamplingCriterionRepository
+from app.repositories.cassandra.criterion_repository import ExperimentSamplingCriterionRepository
 
 router = APIRouter(prefix="/api/v1/experiments/{experiment_id}/criteria", tags=["sampling criteria"])
 

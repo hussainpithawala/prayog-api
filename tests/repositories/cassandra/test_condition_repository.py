@@ -1,4 +1,4 @@
-# tests/repositories/cassandra/test_experiment_sampling_condition_repository.py
+# tests/repositories/cassandra/test_condition_repository.py
 from uuid import uuid4
 
 def test_create_condition(condition_repo, sample_condition):
