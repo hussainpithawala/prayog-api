@@ -5,6 +5,7 @@ from app.repositories.cassandra.experiment_repository import ExperimentRepositor
 from app.repositories.cassandra.bucket_repository import BucketRepository
 from app.repositories.cassandra.sample_repository import BucketedSampleRepository
 from app.repositories.cassandra.criterion_repository import ExperimentSamplingCriterionRepository
+from app.services.bucket_allocator import BucketAllocator
 
 
 def get_service_repository() -> ServiceRepository:
@@ -34,3 +35,7 @@ def get_condition_repository() -> ExperimentSamplingConditionRepository:
 
 def get_sample_repository() -> BucketedSampleRepository:
     return BucketedSampleRepository()
+
+# Dependency to get the allocator instance
+def get_allocator():
+    return BucketAllocator()

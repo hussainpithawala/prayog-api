@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
 from app.db.cassandra import CassandraSessionManager
+from app.services.bucket_allocator import BucketAllocator
 from app.telemetry.tracing import setup_tracing
 from app.telemetry.metrics import setup_metrics
 from app.telemetry.logging import setup_logging
@@ -16,6 +17,15 @@ async def lifespan(app: FastAPI):
     CassandraSessionManager.get_session()
     setup_metrics()
     setup_logging()
+    allocator = BucketAllocator()
+    # sample allocation, which needs to reflect the actual {experiment, [buckets]} combination
+    allocator.configure_experiment(
+        "homepage_redesign",
+        [
+            {"bucket_name": "control", "percentage_distribution": 50},
+            {"bucket_name": "variant", "percentage_distribution": 50}
+        ]
+    )
     yield
     # Shutdown logic
     # Clean up Cassandra connection

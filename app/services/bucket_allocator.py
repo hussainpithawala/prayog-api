@@ -1,26 +1,39 @@
 import xxhash
+from typing import Dict, List
+from functools import lru_cache
+import threading
 
-# Constants should be identical across all instances
-BUCKET_HASH_SEED = 42  # Must be the same everywhere
+BUCKET_HASH_SEED = 42  # Must be identical across all instances
 HASH_MAX = 4294967296.0  # 2^32 for 32-bit hashing
-FLOAT_TOLERANCE = 1e-6  # For floating point comparisons
+FLOAT_TOLERANCE = 1e-6
 
 
 class BucketAllocator:
-    def __init__(self, buckets):
-        """
-        Initialize with bucket configuration.
+    _instance = None
+    _lock = threading.Lock()
 
-        Args:
-            buckets: List of dicts with 'bucket_name' and 'percentage_distribution'
-        """
-        self._validate_buckets(buckets)
-        self.buckets = self._normalize_buckets(buckets)
-        self.slots = self._calculate_slots(self.buckets)
+    def __new__(cls):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(BucketAllocator, cls).__new__(cls)
+                cls._instance._experiments: Dict[str, List[Dict]] = {}
+                cls._instance._locks: Dict[str, threading.Lock] = {}
+        return cls._instance
+
+    def configure_experiment(self, experiment_id: str, buckets: List[Dict]):
+        """Configure buckets for an experiment in a thread-safe way"""
+        if experiment_id not in self._locks:
+            with self._lock:
+                if experiment_id not in self._locks:
+                    self._locks[experiment_id] = threading.Lock()
+
+        with self._locks[experiment_id]:
+            self._validate_buckets(buckets)
+            self._experiments[experiment_id] = self._normalize_buckets(buckets)
 
     @staticmethod
-    def _validate_buckets(buckets):
-        """Validate bucket configuration."""
+    def _validate_buckets(buckets: List[Dict]):
+        """Validate bucket configuration"""
         if not buckets:
             raise ValueError("At least one bucket must be provided")
 
@@ -29,63 +42,65 @@ class BucketAllocator:
             raise ValueError(f"Bucket percentages must sum to 100 (got {total})")
 
     @staticmethod
-    def _normalize_buckets(buckets):
-        """Ensure percentages sum exactly to 100 accounting for floating point."""
+    def _normalize_buckets(buckets: List[Dict]) -> List[Dict]:
+        """Ensure percentages sum exactly to 100 accounting for floating point"""
         total = sum(b['percentage_distribution'] for b in buckets)
         if abs(total - 100.0) <= FLOAT_TOLERANCE:
             return buckets.copy()
 
-        # Adjust the last bucket to make the total exactly 100
         normalized = buckets.copy()
-        normalized[-1] = {
-            'bucket_name': normalized[-1]['bucket_name'],
-            'percentage_distribution': normalized[-1]['percentage_distribution'] + (100.0 - total)
-        }
+        normalized[-1]['percentage_distribution'] += (100.0 - total)
         return normalized
 
-    @staticmethod
-    def _calculate_slots(buckets):
-        """Calculate the allocation slots."""
-        sorted_buckets = sorted(buckets, key=lambda x: x['bucket_name'])
+    @lru_cache(maxsize=1024)
+    def _get_slots(self, experiment_id: str) -> List[Dict]:
+        """Calculate slots for an experiment with caching"""
+        buckets = sorted(
+            self._experiments[experiment_id],
+            key=lambda x: x['bucket_name']
+        )
         slots = []
         threshold = 0.0
 
-        for bucket in sorted_buckets:
+        for bucket in buckets:
             threshold += bucket['percentage_distribution']
             slots.append({
                 'name': bucket['bucket_name'],
                 'end': threshold
             })
 
-        # Ensure last bucket ends exactly at 100
         if slots:
             slots[-1]['end'] = 100.0
 
         return slots
 
-    def allocate(self, sample):
+    def allocate(self, experiment_id: str, sample: Dict) -> str:
         """
-        Allocate a sample to a bucket.
+        Allocate a sample to a bucket in the specified experiment
 
         Args:
-            sample: Dict with 'experiment_id', 'sampled_entity', and 'sampled_value'
+            experiment_id: ID of the experiment to allocate within
+            sample: Dict containing 'entity_id' and optionally other fields
 
         Returns:
             The allocated bucket name
         """
-        key = f"{sample['experiment_id']}:{sample['sampled_entity']}:{sample['sampled_value']}"
+        if experiment_id not in self._experiments:
+            raise ValueError(f"Experiment {experiment_id} not configured")
+
+        slots = self._get_slots(experiment_id)
+        key = f"{experiment_id}:{sample['entity_id']}"
         point = (xxhash.xxh32_intdigest(key, seed=BUCKET_HASH_SEED) / HASH_MAX) * 100.0
 
-        # Find the appropriate bucket (using binary search for efficiency)
-        low, high = 0, len(self.slots) - 1
+        # Binary search for efficient allocation
+        low, high = 0, len(slots) - 1
         while low <= high:
             mid = (low + high) // 2
-            if point <= self.slots[mid]['end'] + FLOAT_TOLERANCE:
-                if mid == 0 or point > self.slots[mid - 1]['end'] - FLOAT_TOLERANCE:
-                    return self.slots[mid]['name']
+            if point <= slots[mid]['end'] + FLOAT_TOLERANCE:
+                if mid == 0 or point > slots[mid - 1]['end'] - FLOAT_TOLERANCE:
+                    return slots[mid]['name']
                 high = mid - 1
             else:
                 low = mid + 1
 
-        # Fallback (should theoretically never be reached)
-        return self.slots[-1]['name']
+        return slots[-1]['name']
